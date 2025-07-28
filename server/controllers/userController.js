@@ -9,6 +9,26 @@ const generateToken = (userId)=>{
     return jwt.sign(payload, process.env.JWT_SECRET)
 }
 
+export const loginUser = async (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.json({ success: false, message: "Please fill all fields" });
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.json({ success: false, message: "User not found" });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.json({ success: false, message: "Incorrect password" });
+  }
+
+  const token = generateToken(user._id.toString());
+  res.json({ success: true, token });
+};
 
 // Register User
 export const registerUser = async (req, res) => {
