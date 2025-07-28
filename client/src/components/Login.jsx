@@ -12,30 +12,41 @@ const Login = () => {
 
 const onSubmitHandler = async (event) => {
   event.preventDefault();
+
+  console.log("Submitting form:");
+  console.log("State:", state);
+  console.log("Name:", name);
+  console.log("Email:", email);
+  console.log("Password:", password);
+
   try {
-    const { data } = await axios.post(`/api/user/${state}`, {
-      name,
-      email,
-      password,
-    });
+    const payload =
+      state === "register"
+        ? { name, email, password }
+        : { email, password };
+
+    const { data } = await axios.post(`/api/user/${state}`, payload);
 
     if (data.success) {
-      toast.success("Login successful!"); // ✅ Show toast first
-
-      // Slight delay to let the toast render (optional)
+      toast.success("Login successful!");
       setTimeout(() => {
         setToken(data.token);
         localStorage.setItem("token", data.token);
         setShowLogin(false);
         navigate("/");
-      }, 800); // delay by 800ms so user can see the toast
+      }, 800);
     } else {
       toast.error(data.message || "Login failed");
     }
   } catch (error) {
-    toast.error(error.response?.data?.message || error.message || "Something went wrong");
+    toast.error(
+      error.response?.data?.message ||
+        error.message ||
+        "Something went wrong"
+    );
   }
 };
+
 
   return (
     <div
