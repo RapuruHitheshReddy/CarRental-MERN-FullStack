@@ -1,5 +1,5 @@
 import React from 'react'
-import Hero from '../components/hero'
+import Hero from "../components/Hero";
 import FuturedSection from '../components/FuturedSection'
 import Banner from '../components/Banner'
 import Testimonial from '../components/Testimonial'
