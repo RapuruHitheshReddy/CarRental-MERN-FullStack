@@ -11,16 +11,25 @@ export const AppProvider = ({ children }) => {
   const navigate = useNavigate();
   const currency = import.meta.env.VITE_CURRENCY;
 
-  const [token, setToken] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token"));
   const [user, setUser] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const [pickupDate, setPickupDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
-
   const [cars, setCars] = useState([]);
 
-  // Function to check if user is logged in
+  // Set the token in Axios headers if available
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common["Authorization"] = `${token}`;
+      fetchUser();
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+    }
+    fetchCars(); // always fetch cars, even if not logged in
+  }, [token]);
+
   const fetchUser = async () => {
     try {
       const { data } = await axios.get("/api/user/data");
@@ -28,63 +37,51 @@ export const AppProvider = ({ children }) => {
         setUser(data.user);
         setIsOwner(data.user.role === "owner");
       } else {
+        logout(); // fallback logout
         navigate("/");
       }
     } catch (error) {
-      toast.error(error.message);
+      logout();
+      toast.error("Session expired. Please login again.");
+      navigate("/");
     }
   };
 
-  // Function to fetch all cars from the server
   const fetchCars = async () => {
     try {
-      const { data } = await axios.get("/api/user/cars");
-      data.success ? setCars(data.cars) : toast.error(data.message);
+      const { data } = await axios.get("/api/user/cars"); // no auth now
+      if (data.success) {
+        setCars(data.cars);
+      } else {
+        toast.error(data.message || "Failed to fetch cars.");
+      }
     } catch (error) {
-      toast.error(error.message);
+      toast.error("Error loading cars: " + error.message);
     }
   };
 
-  // Function to log out the user
   const logout = () => {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
     setIsOwner(false);
-    axios.defaults.headers.common["Authorization"] = "";
+    delete axios.defaults.headers.common["Authorization"];
     toast.success("You have been logged out");
   };
-
-useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    setToken(token); // this triggers next useEffect
-  }
-}, []);
-
-useEffect(() => {
-  if (token) {
-    axios.defaults.headers.common["Authorization"] = `${token}`;
-    fetchUser();
-    fetchCars(); // ✅ now Authorization header is set
-  }
-}, [token]);
-
 
   const value = {
     navigate,
     currency,
-    axios,
     user,
     setUser,
     token,
     setToken,
     isOwner,
     setIsOwner,
-    fetchUser,
     showLogin,
     setShowLogin,
     logout,
+    fetchUser,
     fetchCars,
     cars,
     setCars,
@@ -93,9 +90,8 @@ useEffect(() => {
     returnDate,
     setReturnDate,
   };
+
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 };
 
-export const useAppContext = () => {
-  return useContext(AppContext);
-};
+export const useAppContext = () => useContext(AppContext);

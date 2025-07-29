@@ -20,17 +20,17 @@ const Cars = () => {
   const { cars, axios } = useAppContext();
 
   const applyFilter = useCallback(() => {
-    if (!input.trim()) {
+    const trimmedInput = input.trim().toLowerCase();
+    if (!trimmedInput) {
       setFilteredCars(cars);
       return;
     }
 
-    const lowerInput = input.toLowerCase();
     const filtered = cars.filter((car) =>
-      [car.brand, car.model, car.category, car.transmission].some((field) =>
-        field.toLowerCase().includes(lowerInput)
-      )
+      [car.brand, car.model, car.category, car.transmission]
+        .some((field) => field.toLowerCase().includes(trimmedInput))
     );
+
     setFilteredCars(filtered);
   }, [input, cars]);
 
@@ -48,26 +48,28 @@ const Cars = () => {
           toast("No cars available", { icon: "🚫" });
         }
       } else {
-        toast.error("Failed to fetch available cars.");
+        toast.error(data.message || "Failed to fetch available cars.");
       }
     } catch (err) {
       toast.error("Error fetching car availability.");
     }
   }, [pickupLocation, pickupDate, returnDate, axios]);
 
+  // Initial data handling
   useEffect(() => {
     if (isSearchData) {
       searchCarAvailability();
-    } else if (cars.length > 0) {
-      applyFilter();
+    } else {
+      applyFilter(); // initial filter for all cars
     }
   }, [isSearchData, cars, applyFilter, searchCarAvailability]);
 
+  // Refetch when input changes
   useEffect(() => {
-    if (!isSearchData && cars.length > 0) {
+    if (!isSearchData) {
       applyFilter();
     }
-  }, [input, isSearchData, cars, applyFilter]);
+  }, [input, isSearchData, applyFilter]);
 
   return (
     <motion.div
@@ -87,11 +89,7 @@ const Cars = () => {
           subTitle="Browse our selection of premium vehicles available for your next adventure"
         />
         <div className="flex items-center bg-white px-4 mt-6 max-w-140 w-full h-12 rounded-full shadow">
-          <img
-            src={assets.search_icon}
-            alt="search"
-            className="w-4.5 h-4.5 mr-2"
-          />
+          <img src={assets.search_icon} alt="search" className="w-4.5 h-4.5 mr-2" />
           <input
             type="text"
             value={input}
@@ -99,11 +97,7 @@ const Cars = () => {
             placeholder="Search by make, model, or features"
             className="w-full h-full outline-none text-gray-500"
           />
-          <img
-            src={assets.filter_icon}
-            alt="filter"
-            className="w-4.5 h-4.5 ml-2"
-          />
+          <img src={assets.filter_icon} alt="filter" className="w-4.5 h-4.5 ml-2" />
         </div>
       </motion.div>
 
@@ -115,8 +109,7 @@ const Cars = () => {
         className="px-6 md:px-16 lg:px-24 xl:px-32 mt-10"
       >
         <p className="text-gray-500 xl:px-20 max-w-7xl mx-auto">
-          Showing {filteredCars.length}{" "}
-          {filteredCars.length === 1 ? "Car" : "Cars"}
+          Showing {filteredCars.length} {filteredCars.length === 1 ? "Car" : "Cars"}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6 mt-6 w-full max-w-7xl mx-auto">
           {filteredCars.map((car, index) => (
