@@ -70,6 +70,7 @@ export const AppProvider = ({ children }) => {
   };
 
   const value = {
+    axios,
     navigate,
     currency,
     user,
